@@ -1,160 +1,315 @@
-from tkinter import *
-from tkinter import messagebox
+import tkinter as tk
+from tkinter import ttk, messagebox
+from controller.funciones import Controlador 
+
+class VentanaApp:
+    def __init__(self, contenedor_principal: tk.Tk, controlador: Controlador):
+        self.contenedor_principal = contenedor_principal 
+        self.controlador = controlador 
+        self.contenedor_principal.title("Sistema CRUD Vehículos (Autos, Camionetas y Camiones)")
+        self.contenedor_principal.geometry("950x550")
+        
+        self.id_var = tk.StringVar()
+        self.marca_var = tk.StringVar()
+        self.color_var = tk.StringVar()
+        self.modelo_var = tk.StringVar()
+        self.velocidad_var = tk.StringVar()
+        self.caballaje_var = tk.StringVar()
+        self.plazas_var = tk.StringVar()
+        
+        self.traccion_var = tk.StringVar()
+        self.cerrada_var = tk.StringVar()
+        self.eje_var = tk.StringVar()
+        self.capacidad_carga_var = tk.StringVar()
+        
+        self.notebook = None
+        self.tabla_activa = None
+        
+        self.crear_notebook()
+        self.inicializar_tablas()
+
+    def crear_notebook(self):
+        self.notebook = ttk.Notebook(self.contenedor_principal)
+        self.notebook.pack(pady=10, padx=10, expand=True, fill="both")
+        
+        self.frame_autos = ttk.Frame(self.notebook, padding="10")
+        self.frame_camionetas = ttk.Frame(self.notebook, padding="10")
+        self.frame_camiones = ttk.Frame(self.notebook, padding="10")
+        
+        self.frame_autos.pack(fill='both', expand=True)
+        self.frame_camionetas.pack(fill='both', expand=True)
+        self.frame_camiones.pack(fill='both', expand=True)
+        
+        self.notebook.add(self.frame_autos, text='  Autos  ')
+        self.notebook.add(self.frame_camionetas, text='  Camionetas  ')
+        self.notebook.add(self.frame_camiones, text='  Camiones  ')
+        
+        self.crear_widgets_autos(self.frame_autos)
+        self.crear_widgets_camionetas(self.frame_camionetas)
+        self.crear_widgets_camiones(self.frame_camiones)
+        
+    def inicializar_tablas(self):
+        self.notebook.bind("<<NotebookTabChanged>>", self.cargar_datos_pestaña_activa)
+        self.consultar_autos()
+        self.tabla_activa = self.tabla_autos
+        
+    def cargar_datos_pestaña_activa(self, event):
+        pestaña_actual = self.notebook.tab(self.notebook.select(), "text").strip()
+        self.limpiar_campos()
+        
+        if "Autos" in pestaña_actual:
+            self.consultar_autos()
+            self.tabla_activa = self.tabla_autos
+        elif "Camionetas" in pestaña_actual:
+            self.consultar_camionetas()
+            self.tabla_activa = self.tabla_camionetas
+        elif "Camiones" in pestaña_actual:
+            self.consultar_camiones()
+            self.tabla_activa = self.tabla_camiones
+
+    def limpiar_campos(self):
+        self.id_var.set("")
+        self.marca_var.set("")
+        self.color_var.set("")
+        self.modelo_var.set("")
+        self.velocidad_var.set("")
+        self.caballaje_var.set("")
+        self.plazas_var.set("")
+        self.traccion_var.set("")
+        self.cerrada_var.set("")
+        self.eje_var.set("")
+        self.capacidad_carga_var.set("")
+
+    def crear_label_entry(self, contenedor, texto, variable, fila, columna):
+        ttk.Label(contenedor, text=texto).grid(row=fila, column=columna, padx=5, pady=5, sticky="w")
+        ttk.Entry(contenedor, textvariable=variable, width=15 if 'ID' in texto or 'Año' in texto else 20).grid(row=fila, column=columna + 1, padx=5, pady=5)
+
+    def crear_tabla(self, contenedor, columnas):
+        tabla = ttk.Treeview(contenedor, columns=columnas, show="headings")
+        
+        for col in columnas:
+            tabla.heading(col, text=col)
+            if col == "id": tabla.column(col, width=40, anchor=tk.CENTER)
+            elif col == "marca" or col == "modelo" or col == "color" or col == "traccion": tabla.column(col, width=100, anchor=tk.W)
+            else: tabla.column(col, width=80, anchor=tk.CENTER)
+
+        barra_desplazamiento = ttk.Scrollbar(contenedor, orient="vertical", command=tabla.yview)
+        tabla.configure(yscrollcommand=barra_desplazamiento.set)
+        
+        barra_desplazamiento.pack(side=tk.RIGHT, fill=tk.Y)
+        tabla.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        return tabla
+
+    # INTERFAZ AUTOS
+    def crear_widgets_autos(self, contenedor):
+        marco_entrada = ttk.Frame(contenedor, padding="10")
+        marco_entrada.pack(side=tk.TOP, fill=tk.X)
+        
+        self.crear_label_entry(marco_entrada, "ID Auto:", self.id_var, 0, 0)
+        self.crear_label_entry(marco_entrada, "Marca:", self.marca_var, 1, 0)
+        self.crear_label_entry(marco_entrada, "Color:", self.color_var, 1, 2)
+        self.crear_label_entry(marco_entrada, "Modelo (Año):", self.modelo_var, 2, 0)
+        self.crear_label_entry(marco_entrada, "Velocidad:", self.velocidad_var, 2, 2)
+        self.crear_label_entry(marco_entrada, "Caballaje:", self.caballaje_var, 3, 0)
+        self.crear_label_entry(marco_entrada, "Plazas:", self.plazas_var, 3, 2)
+        
+        marco_botones = ttk.Frame(contenedor, padding="10")
+        marco_botones.pack(side=tk.TOP, fill=tk.X)
+        ttk.Button(marco_botones, text="Insertar Auto", command=self.insertar_auto).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Consultar Autos", command=self.consultar_autos).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Actualizar Auto", command=self.cambiar_auto).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Borrar Auto", command=self.borrar_auto).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Limpiar Campos", command=self.limpiar_campos).pack(side=tk.LEFT, padx=5, pady=5)
+
+        columnas_autos = ("id", "marca", "color", "modelo", "velocidad", "caballaje", "plazas")
+        self.tabla_autos = self.crear_tabla(contenedor, columnas_autos)
+        self.tabla_autos.bind('<<TreeviewSelect>>', self.seleccionar_registro_auto)
+
+    # INTERFAZ CAMIONETAS
+    def crear_widgets_camionetas(self, contenedor):
+        marco_entrada = ttk.Frame(contenedor, padding="10")
+        marco_entrada.pack(side=tk.TOP, fill=tk.X)
+        
+        self.crear_label_entry(marco_entrada, "ID Camioneta:", self.id_var, 0, 0)
+        self.crear_label_entry(marco_entrada, "Marca:", self.marca_var, 1, 0)
+        self.crear_label_entry(marco_entrada, "Color:", self.color_var, 1, 2)
+        self.crear_label_entry(marco_entrada, "Modelo (Año):", self.modelo_var, 2, 0)
+        self.crear_label_entry(marco_entrada, "Velocidad:", self.velocidad_var, 2, 2)
+        self.crear_label_entry(marco_entrada, "Caballaje:", self.caballaje_var, 3, 0)
+        self.crear_label_entry(marco_entrada, "Plazas:", self.plazas_var, 3, 2)
+        
+        self.crear_label_entry(marco_entrada, "Tracción:", self.traccion_var, 4, 0)
+        self.crear_label_entry(marco_entrada, "Cerrada (0/1):", self.cerrada_var, 4, 2)
+        
+        marco_botones = ttk.Frame(contenedor, padding="10")
+        marco_botones.pack(side=tk.TOP, fill=tk.X)
+        ttk.Button(marco_botones, text="Insertar Camioneta", command=self.insertar_camioneta).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Consultar Camionetas", command=self.consultar_camionetas).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Actualizar Camioneta", command=self.cambiar_camioneta).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Borrar Camioneta", command=self.borrar_camioneta).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Limpiar Campos", command=self.limpiar_campos).pack(side=tk.LEFT, padx=5, pady=5)
+
+        columnas_camionetas = ("id", "marca", "color", "modelo", "velocidad", "caballaje", "plazas", "traccion", "cerrada")
+        self.tabla_camionetas = self.crear_tabla(contenedor, columnas_camionetas)
+        self.tabla_camionetas.bind('<<TreeviewSelect>>', self.seleccionar_registro_camioneta)
+
+    # INTERFAZ CAMIONES
+    def crear_widgets_camiones(self, contenedor):
+        marco_entrada = ttk.Frame(contenedor, padding="10")
+        marco_entrada.pack(side=tk.TOP, fill=tk.X)
+        
+        self.crear_label_entry(marco_entrada, "ID Camión:", self.id_var, 0, 0)
+        self.crear_label_entry(marco_entrada, "Marca:", self.marca_var, 1, 0)
+        self.crear_label_entry(marco_entrada, "Color:", self.color_var, 1, 2)
+        self.crear_label_entry(marco_entrada, "Modelo (Año):", self.modelo_var, 2, 0)
+        self.crear_label_entry(marco_entrada, "Velocidad:", self.velocidad_var, 2, 2)
+        self.crear_label_entry(marco_entrada, "Caballaje:", self.caballaje_var, 3, 0)
+        self.crear_label_entry(marco_entrada, "Plazas:", self.plazas_var, 3, 2)
+        
+        self.crear_label_entry(marco_entrada, "Eje:", self.eje_var, 4, 0)
+        self.crear_label_entry(marco_entrada, "Capacidad Carga:", self.capacidad_carga_var, 4, 2)
+        
+        marco_botones = ttk.Frame(contenedor, padding="10")
+        marco_botones.pack(side=tk.TOP, fill=tk.X)
+        ttk.Button(marco_botones, text="Insertar Camión", command=self.insertar_camion).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Consultar Camiones", command=self.consultar_camiones).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Actualizar Camión", command=self.cambiar_camion).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Borrar Camión", command=self.borrar_camion).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(marco_botones, text="Limpiar Campos", command=self.limpiar_campos).pack(side=tk.LEFT, padx=5, pady=5)
+
+        columnas_camiones = ("id", "marca", "color", "modelo", "velocidad", "caballaje", "plazas", "eje", "capacidadcarga")
+        self.tabla_camiones = self.crear_tabla(contenedor, columnas_camiones)
+        self.tabla_camiones.bind('<<TreeviewSelect>>', self.seleccionar_registro_camion)
 
 
-class Vistas():
-    def __init__(self,ventana):
-        ventana.geometry("800x600")
-        ventana.title("Coches system")
-        self.menu_principal(ventana)
+    # MÉTODOS CRUD AUTOS
+    def insertar_auto(self):
+        resultado = self.controlador.insertar_auto(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get())
+        messagebox.showinfo("Insertar", resultado)
+        self.limpiar_campos()
+        self.consultar_autos()
 
-    def borrarPantalla(self,ventana):
-        for widget in ventana.winfo_children():
-            widget.destroy()
+    def consultar_autos(self):
+        self.tabla_activa = self.tabla_autos
+        for item in self.tabla_activa.get_children(): self.tabla_activa.delete(item)
+        registros = self.controlador.consultar_autos()
+        for registro in registros: self.tabla_activa.insert('', tk.END, values=registro)
+            
+    def cambiar_auto(self):
+        resultado = self.controlador.cambiar_auto(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get())
+        messagebox.showinfo("Actualizar", resultado)
+        self.limpiar_campos()
+        self.consultar_autos()
 
-    def menu_principal(self,ventana):
-        self.borrarPantalla(ventana)
-        lblTitulo=Label(ventana,text=".:: Menu principal ::.")
-        lblTitulo.pack(pady=5)
-        btnCoches=Button(ventana,text="1.- Coches",command=lambda : self.menu_acciones(ventana,"coches"))
-        btnCoches.pack(pady=5)
-        btnCamiones=Button(ventana,text="2.- Camiones",command=lambda: "self.menu_acciones(ventana,camiones)")
-        btnCamiones.pack(pady=5)
-        btnCamionetas=Button(ventana,text="3.- Camionetas",command=lambda: "self.menu_acciones(ventana,camionetas)")
-        btnCamionetas.pack(pady=5)
-        btnSalir=Button(ventana,text="4.- Salir",command=ventana.quit)
-        btnSalir.pack(pady=5)
+    def borrar_auto(self):
+        id_a_borrar = self.id_var.get()
+        if not id_a_borrar: messagebox.showerror("Error", "Debe seleccionar o ingresar un ID para borrar."); return
+        confirmar = messagebox.askyesno("Confirmar Borrado", f"¿Está seguro de borrar el Auto con ID {id_a_borrar}?")
+        if confirmar:
+            resultado = self.controlador.borrar_auto(id_a_borrar)
+            messagebox.showinfo("Borrar", resultado)
+            self.limpiar_campos()
+            self.consultar_autos()
 
-    def menu_acciones(self,ventana,vehiculo):
-        global tipo
-        tipo=vehiculo
-        self.borrarPantalla(ventana)
-        lblTitulo=Label(ventana,text=f"Menu de {tipo}")
-        lblTitulo.pack(pady=5)
-        btnAgregar=Button(ventana,text="1.-Agregar",command=lambda: self.insertar_autos(ventana))
-        btnAgregar.pack(pady=5)
-        btnMostrar=Button(ventana,text="2.-Mostrar",command=lambda: self.consultar_autos()(ventana))
-        btnMostrar.pack(pady=5)
-        btnCambiar=Button(ventana,text="3.-Cambiar",command=lambda: self.cambiar_autos(ventana))
-        btnCambiar.pack(pady=5)
-        btnEliminar=Button(ventana,text="4.-Eliminar",command=lambda: self.borrar_autos()(ventana))
-        btnEliminar.pack(pady=5)
-        btnSalir=Button(ventana,text="5.-Volver",command=lambda: self.menu_principal(ventana))
-        btnSalir.pack(pady=5)
+    def seleccionar_registro_auto(self, event):
+        item_seleccionado = self.tabla_autos.focus()
+        if item_seleccionado:
+            valores = self.tabla_autos.item(item_seleccionado, 'values')
+            self.id_var.set(valores[0])
+            self.marca_var.set(valores[1])
+            self.color_var.set(valores[2])
+            self.modelo_var.set(valores[3])
+            self.velocidad_var.set(valores[4])
+            self.caballaje_var.set(valores[5])
+            self.plazas_var.set(valores[6])
+            self.traccion_var.set(""); self.cerrada_var.set(""); self.eje_var.set(""); self.capacidad_carga_var.set("") 
 
 
-    def insertar_autos(self,ventana):
-        self.borrarPantalla(ventana)
-        lblTitulo=Label(ventana,text="Agregar coches")
-        lblTitulo.pack(pady=5)
-        lblMarca=Label(ventana,text="Inserte marca")
-        lblMarca.pack()
-        txtMarca=Entry(ventana)
-        txtMarca.pack(pady=5)
+    # MÉTODOS CRUD CAMIONETAS
+    def insertar_camioneta(self):
+        resultado = self.controlador.insertar_camioneta(self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.traccion_var.get(), self.cerrada_var.get())
+        messagebox.showinfo("Insertar Camioneta", resultado)
+        self.limpiar_campos()
+        self.consultar_camionetas()
 
-        lblColor=Label(ventana,text="Inserte el color")
-        lblColor.pack()
-        txtColor=Entry(ventana)
-        txtColor.pack(pady=5)
+    def consultar_camionetas(self):
+        self.tabla_activa = self.tabla_camionetas
+        for item in self.tabla_activa.get_children(): self.tabla_activa.delete(item)
+        registros = self.controlador.consultar_camionetas()
+        for registro in registros: self.tabla_activa.insert('', tk.END, values=registro)
+            
+    def cambiar_camioneta(self):
+        resultado = self.controlador.cambiar_camioneta(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.traccion_var.get(), self.cerrada_var.get())
+        messagebox.showinfo("Actualizar Camioneta", resultado)
+        self.limpiar_campos()
+        self.consultar_camionetas()
 
-        lblModelo=Label(ventana,text="Inserte el modelo")
-        lblModelo.pack()
-        txtModelo=Entry(ventana)
-        txtModelo.pack(pady=5)
+    def borrar_camioneta(self):
+        id_a_borrar = self.id_var.get()
+        if not id_a_borrar: messagebox.showerror("Error", "Debe seleccionar o ingresar un ID para borrar."); return
+        confirmar = messagebox.askyesno("Confirmar Borrado", f"¿Está seguro de borrar la Camioneta con ID {id_a_borrar}?")
+        if confirmar:
+            resultado = self.controlador.borrar_camioneta(id_a_borrar)
+            messagebox.showinfo("Borrar Camioneta", resultado)
+            self.limpiar_campos()
+            self.consultar_camionetas()
 
-        lblVelocidad=Label(ventana,text="Inserte la velocidad")
-        lblVelocidad.pack()
-        txtVelocidad=Entry(ventana)
-        txtVelocidad.pack(pady=5)
+    def seleccionar_registro_camioneta(self, event):
+        item_seleccionado = self.tabla_camionetas.focus()
+        if item_seleccionado:
+            valores = self.tabla_camionetas.item(item_seleccionado, 'values')
+            self.id_var.set(valores[0])
+            self.marca_var.set(valores[1])
+            self.color_var.set(valores[2])
+            self.modelo_var.set(valores[3])
+            self.velocidad_var.set(valores[4])
+            self.caballaje_var.set(valores[5])
+            self.plazas_var.set(valores[6])
+            self.traccion_var.set(valores[7])
+            self.cerrada_var.set(valores[8])
+            self.eje_var.set(""); self.capacidad_carga_var.set("") 
 
-        lblPotencia=Label(ventana,text="Inserte la potencia")
-        lblPotencia.pack()
-        txtPotencia=Entry(ventana)
-        txtPotencia.pack(pady=5)
+    
+    # MÉTODOS CRUD CAMIONES
+    def insertar_camion(self):
+        resultado = self.controlador.insertar_camion(self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.eje_var.get(), self.capacidad_carga_var.get())
+        messagebox.showinfo("Insertar Camión", resultado)
+        self.limpiar_campos()
+        self.consultar_camiones()
 
-        lblPlazas=Label(ventana,text="Inserte las plazas")
-        lblPlazas.pack()
-        txtPlazas=Entry(ventana)
-        txtPlazas.pack(pady=5)
+    def consultar_camiones(self):
+        self.tabla_activa = self.tabla_camiones
+        for item in self.tabla_activa.get_children(): self.tabla_activa.delete(item)
+        registros = self.controlador.consultar_camiones()
+        for registro in registros: self.tabla_activa.insert('', tk.END, values=registro)
+            
+    def cambiar_camion(self):
+        resultado = self.controlador.cambiar_camion(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.eje_var.get(), self.capacidad_carga_var.get())
+        messagebox.showinfo("Actualizar Camión", resultado)
+        self.limpiar_campos()
+        self.consultar_camiones()
 
-        btnAgregar=Button(ventana,text="Agregar",command= lambda: "")
-        btnAgregar.pack(pady=5)
-        btnVolver=Button(ventana,text="Volver",command= lambda: self.menu_acciones(ventana,tipo))
-        btnVolver.pack(pady=5)
+    def borrar_camion(self):
+        id_a_borrar = self.id_var.get()
+        if not id_a_borrar: messagebox.showerror("Error", "Debe seleccionar o ingresar un ID para borrar."); return
+        confirmar = messagebox.askyesno("Confirmar Borrado", f"¿Está seguro de borrar el Camión con ID {id_a_borrar}?")
+        if confirmar:
+            resultado = self.controlador.borrar_camion(id_a_borrar)
+            messagebox.showinfo("Borrar Camión", resultado)
+            self.limpiar_campos()
+            self.consultar_camiones()
 
-    def consultar_autos(self,ventana):
-        self.borrarPantalla(ventana)
-        lblTitulo=Label(ventana,text="Coches agregados")
-        lblTitulo.pack(pady=5)
-        filas=""
-        registros=[("1","Toyota","Rojo","2019","180","300","4"),("2","Renoult","Gris","2019","300","400","4")]
-        if len(registros)>0:
-          num_autos=1
-          for fila in registros:
-            filas=filas+f"\nAuto #{num_autos} con ID: {fila[0]} \nMarca: {fila[1]} Color: {fila[2]} Modelo: {fila[3]} Velocidad: {fila[4]} Potencia: {fila[5]} Plazas: {fila[6]}"
-            num_autos+=1
-        else:
-            messagebox.showinfo(message="No hay coches por el momento en el sistema")
-
-        lblNote=Label(ventana,text=filas)
-        lblNote.pack(pady=5)
-        btnVolver=Button(ventana,text="Volver",command=lambda: self.menu_acciones(ventana,tipo))
-        btnVolver.pack(pady=5)
-
-    def cambiar_autos(self,ventana):
-        self.borrarPantalla(ventana)
-        lblTitulo=Label(ventana,text="Modificar el coche")
-        lblTitulo.pack(pady=5)
-
-        lblId=Label(ventana,text="Ingrese el id")
-        lblId.pack(pady=5)
-        txtId=Entry(ventana)
-        txtId.pack()
-
-        lblMarca=Label(ventana,text="Inserte la marca")
-        lblMarca.pack()
-        txtMarca=Entry(ventana)
-        txtMarca.pack(pady=5)
-
-        lblColor=Label(ventana,text="Inserte el color")
-        lblColor.pack()
-        txtColor=Entry(ventana)
-        txtColor.pack(pady=5)
-
-        lblModelo=Label(ventana,text="Inserte el modelo")
-        lblModelo.pack()
-        txtModelo=Entry(ventana)
-        txtModelo.pack(pady=5)
-
-        lblVelocidad=Label(ventana,text="Inserte la velocidad")
-        lblVelocidad.pack()
-        txtVelocidad=Entry(ventana)
-        txtVelocidad.pack(pady=5)
-
-        lblPotencia=Label(ventana,text="Inserte la potencia")
-        lblPotencia.pack()
-        txtPotencia=Entry(ventana)
-        txtPotencia.pack(pady=5)
-
-        lblPlazas=Label(ventana,text="Inserte las plazas")
-        lblPlazas.pack()
-        txtPlazas=Entry(ventana)
-        txtPlazas.pack(pady=5)
-
-        btnGuardar=Button(ventana,text="Guardar",command= lambda: "")
-        btnGuardar.pack(pady=5)
-        btnVolver=Button(ventana,text="Volver",command= lambda: self.menu_acciones(ventana,tipo))
-        btnVolver.pack(pady=5)
-
-    def borrar_autos(self,ventana):
-        self.borrarPantalla(ventana)
-        lblTitulo=Label(ventana,text="Eliminar un coche")
-        lblTitulo.pack(pady=5)
-        lblId=Label(ventana,text="Ingrese el id")
-        lblId.pack(pady=5)
-        txtId=Entry(ventana)
-        txtId.pack()
-        btnEliminar=Button(ventana,text="Eliminar",command= lambda:"")
-        btnEliminar.pack(pady=5)
-        btnVolver=Button(ventana,text="Volver",command= lambda: self.menu_acciones(ventana,tipo))
-        btnVolver.pack(pady=5)
+    def seleccionar_registro_camion(self, event):
+        item_seleccionado = self.tabla_camiones.focus()
+        if item_seleccionado:
+            valores = self.tabla_camiones.item(item_seleccionado, 'values')
+            self.id_var.set(valores[0])
+            self.marca_var.set(valores[1])
+            self.color_var.set(valores[2])
+            self.modelo_var.set(valores[3])
+            self.velocidad_var.set(valores[4])
+            self.caballaje_var.set(valores[5])
+            self.plazas_var.set(valores[6])
+            self.eje_var.set(valores[7])
+            self.capacidad_carga_var.set(valores[8])
+            self.traccion_var.set(""); self.cerrada_var.set("")

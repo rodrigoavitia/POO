@@ -1,14 +1,36 @@
 import mysql.connector
+from mysql.connector import Error
 
-try:
-    #Conectar con la BD en MySQL
-    conexion=mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='',
-        database='bd_coches'
-    )
-    #Crear un objeto de tipo cursor que se pueda reutilizar nuevamente
-    cursor=conexion.cursor(buffered=True)
-except:
-     print(f"Ocurrio un error con el Sistema por favor verifique ...")    
+class GestorConexion:
+    HOST = "localhost"
+    DATABASE = "bd_coches"
+    USER = "root"
+    PASSWORD = ""
+
+    def __init__(self):
+        self.conexion = None
+        self.cursor = None
+
+    def conectar(self):
+        try:
+            self.conexion = mysql.connector.connect(
+                host=self.HOST,
+                database=self.DATABASE,
+                user=self.USER,
+                password=self.PASSWORD
+            )
+            if self.conexion.is_connected():
+                self.cursor = self.conexion.cursor()
+                return True
+            return False
+        except Error as e:
+            return False
+
+    def desconectar(self):
+        if self.conexion and self.conexion.is_connected():
+            self.conexion.close()
+            
+    def obtener_conexion(self):
+        if self.conectar():
+            return self.conexion, self.cursor
+        return None, None
