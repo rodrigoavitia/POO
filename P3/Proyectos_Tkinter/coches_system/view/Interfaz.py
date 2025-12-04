@@ -6,7 +6,7 @@ class VentanaApp:
     def __init__(self, contenedor_principal: tk.Tk, controlador: Controlador):
         self.contenedor_principal = contenedor_principal 
         self.controlador = controlador 
-        self.contenedor_principal.title("Sistema CRUD Vehículos (Autos, Camionetas y Camiones)")
+        self.contenedor_principal.title("Sistema Vehículos (Autos, Camionetas y Camiones)")
         self.contenedor_principal.geometry("950x550")
         
         self.id_var = tk.StringVar()
@@ -182,7 +182,6 @@ class VentanaApp:
         self.tabla_camiones.bind('<<TreeviewSelect>>', self.seleccionar_registro_camion)
 
 
-    # MÉTODOS CRUD AUTOS
     def insertar_auto(self):
         resultado = self.controlador.insertar_auto(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get())
         messagebox.showinfo("Insertar", resultado)
@@ -225,7 +224,6 @@ class VentanaApp:
             self.traccion_var.set(""); self.cerrada_var.set(""); self.eje_var.set(""); self.capacidad_carga_var.set("") 
 
 
-    # MÉTODOS CRUD CAMIONETAS
     def insertar_camioneta(self):
         resultado = self.controlador.insertar_camioneta(self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.traccion_var.get(), self.cerrada_var.get())
         messagebox.showinfo("Insertar Camioneta", resultado)
