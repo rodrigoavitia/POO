@@ -1,141 +1,189 @@
-import mysql.connector
-from mysql.connector import Error
-from ConexionBD import GestorConexion 
+from ConexionBD import *
 
-class VehiculoDB:
-    def __init__(self):
-        self.gestor_conexion = GestorConexion()
-        
-    def ejecutar_consulta(self, sql, parametros=None, es_select=False):
-        conexion, cursor = self.gestor_conexion.obtener_conexion()
-        resultado = None
-        
-        if conexion and cursor:
-            try:
-                cursor.execute(sql, parametros or ())
-                if es_select:
-                    resultado = cursor.fetchall()
-                else:
-                    conexion.commit()
-                    resultado = cursor.rowcount
-            except Error as e:
-                resultado = f"Error en la consulta: {e}"
-            finally:
-                self.gestor_conexion.desconectar()
-        else:
-             resultado = "Error: No se pudo conectar a la base de datos."
-        return resultado
-
-    # CRUD AUTOS
-    def insertar_auto(self, marca, color, modelo, velocidad, caballaje, plazas):
+class Autos:
+    @staticmethod
+    def insertar(marca, color, modelo, velocidad, caballaje, plazas):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
         sql = "INSERT INTO autos (marca, color, modelo, velocidad, caballaje, plazas) VALUES (%s, %s, %s, %s, %s, %s)"
-        parametros = (marca, color, modelo, velocidad, caballaje, plazas)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int) and filas_afectadas > 0:
-            return "Auto insertado con éxito."
-        return filas_afectadas
-        
-    def consultar_autos(self):
+        datos = (marca, color, modelo, velocidad, caballaje, plazas)
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, datos)
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al insertar auto: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
+    
+    @staticmethod
+    def consultar():
+        conexion = ConexionBD.conectar()
+        if not conexion: return []
         sql = "SELECT id, marca, color, modelo, velocidad, caballaje, plazas FROM autos"
-        registros = self.ejecutar_consulta(sql, es_select=True)
-        if isinstance(registros, str) and registros.startswith("Error"):
-            return []
-        return registros
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al consultar autos: {e}"); return []
+        finally:
+            cursor.close(); conexion.close()
 
-    def cambiar_auto(self, id_auto, marca, color, modelo, velocidad, caballaje, plazas):
+    @staticmethod
+    def actualizar(marca, color, modelo, velocidad, caballaje, plazas, id_auto):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
         sql = "UPDATE autos SET marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s, plazas=%s WHERE id=%s"
-        parametros = (marca, color, modelo, velocidad, caballaje, plazas, id_auto)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int):
-            if filas_afectadas > 0:
-                return "Auto actualizado con éxito."
-            else:
-                return "ID no encontrado o no se realizaron cambios."
-        return filas_afectadas
+        datos = (marca, color, modelo, velocidad, caballaje, plazas, id_auto)
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, datos)
+            conexion.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error al actualizar auto: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
 
-    def borrar_auto(self, id_auto):
-        sql = "DELETE FROM autos WHERE id=%s"
-        parametros = (id_auto,)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int):
-            if filas_afectadas > 0:
-                return "Auto eliminado con éxito."
-            else:
-                return "ID no encontrado."
-        return filas_afectadas
+    @staticmethod
+    def eliminar(id_auto):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
+        sql = "DELETE FROM autos WHERE id = %s"
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, (id_auto,))
+            conexion.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error al eliminar auto: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
 
-    # CRUD CAMIONETAS
-    def insertar_camioneta(self, marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada):
+# --- Camionetas ---
+class Camionetas:
+    @staticmethod
+    def insertar(marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
         sql = "INSERT INTO camionetas (marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        parametros = (marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int) and filas_afectadas > 0:
-            return "Camioneta insertada con éxito."
-        return filas_afectadas
-
-    def consultar_camionetas(self):
+        datos = (marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada)
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, datos)
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al insertar camioneta: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
+    
+    @staticmethod
+    def consultar():
+        conexion = ConexionBD.conectar()
+        if not conexion: return []
         sql = "SELECT id, marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada FROM camionetas"
-        registros = self.ejecutar_consulta(sql, es_select=True)
-        if isinstance(registros, str) and registros.startswith("Error"):
-            return []
-        return registros
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al consultar camionetas: {e}"); return []
+        finally:
+            cursor.close(); conexion.close()
 
-    def cambiar_camioneta(self, id_camioneta, marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada):
+    @staticmethod
+    def actualizar(marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada, id_camioneta):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
         sql = "UPDATE camionetas SET marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s, plazas=%s, traccion=%s, cerrada=%s WHERE id=%s"
-        parametros = (marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada, id_camioneta)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int):
-            if filas_afectadas > 0:
-                return "Camioneta actualizada con éxito."
-            else:
-                return "ID no encontrado o no se realizaron cambios."
-        return filas_afectadas
+        datos = (marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada, id_camioneta)
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, datos)
+            conexion.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error al actualizar camioneta: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
 
-    def borrar_camioneta(self, id_camioneta):
-        sql = "DELETE FROM camionetas WHERE id=%s"
-        parametros = (id_camioneta,)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int):
-            if filas_afectadas > 0:
-                return "Camioneta eliminada con éxito."
-            else:
-                return "ID no encontrado."
-        return filas_afectadas
+    @staticmethod
+    def eliminar(id_camioneta):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
+        sql = "DELETE FROM camionetas WHERE id = %s"
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, (id_camioneta,))
+            conexion.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error al eliminar camioneta: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
 
-    # CRUD CAMIONES
-    def insertar_camion(self, marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga):
+# --- Camiones ---
+class Camiones:
+    @staticmethod
+    def insertar(marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
         sql = "INSERT INTO camiones (marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        parametros = (marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int) and filas_afectadas > 0:
-            return "Camión insertado con éxito."
-        return filas_afectadas
-
-    def consultar_camiones(self):
+        datos = (marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga)
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, datos)
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al insertar camión: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
+    
+    @staticmethod
+    def consultar():
+        conexion = ConexionBD.conectar()
+        if not conexion: return []
         sql = "SELECT id, marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga FROM camiones"
-        registros = self.ejecutar_consulta(sql, es_select=True)
-        if isinstance(registros, str) and registros.startswith("Error"):
-            return []
-        return registros
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al consultar camiones: {e}"); return []
+        finally:
+            cursor.close(); conexion.close()
 
-    def cambiar_camion(self, id_camion, marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga):
+    @staticmethod
+    def actualizar(marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga, id_camion):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
         sql = "UPDATE camiones SET marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s, plazas=%s, eje=%s, capacidadcarga=%s WHERE id=%s"
-        parametros = (marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga, id_camion)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int):
-            if filas_afectadas > 0:
-                return "Camión actualizado con éxito."
-            else:
-                return "ID no encontrado o no se realizaron cambios."
-        return filas_afectadas
+        datos = (marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadcarga, id_camion)
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, datos)
+            conexion.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error al actualizar camión: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()
 
-    def borrar_camion(self, id_camion):
-        sql = "DELETE FROM camiones WHERE id=%s"
-        parametros = (id_camion,)
-        filas_afectadas = self.ejecutar_consulta(sql, parametros)
-        if isinstance(filas_afectadas, int):
-            if filas_afectadas > 0:
-                return "Camión eliminado con éxito."
-            else:
-                return "ID no encontrado."
-        return filas_afectadas
+    @staticmethod
+    def eliminar(id_camion):
+        conexion = ConexionBD.conectar()
+        if not conexion: return False
+        sql = "DELETE FROM camiones WHERE id = %s"
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(sql, (id_camion,))
+            conexion.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error al eliminar camión: {e}"); conexion.rollback(); return False
+        finally:
+            cursor.close(); conexion.close()

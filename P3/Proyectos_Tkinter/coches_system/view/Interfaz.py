@@ -1,313 +1,594 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-from controller.funciones import Controlador 
+from tkinter import *
+from tkinter import messagebox
+# Asegúrate de que tus controladores se llamen así en tu archivo controller/controlador.py
+from controller.controlador import AutosControlador, CamionetasControlador, CamionesControlador 
 
-class VentanaApp:
-    def __init__(self, contenedor_principal: tk.Tk, controlador: Controlador):
-        self.contenedor_principal = contenedor_principal 
-        self.controlador = controlador 
-        self.contenedor_principal.title("Sistema Vehículos (Autos, Camionetas y Camiones)")
-        self.contenedor_principal.geometry("950x550")
+class InterfacesMenu():
+    def __init__(self,ventana):
+        ventana.geometry("800x600")
+        ventana.title("Coches system")
+        InterfacesMenu.menu_principal(ventana)
         
-        self.id_var = tk.StringVar()
-        self.marca_var = tk.StringVar()
-        self.color_var = tk.StringVar()
-        self.modelo_var = tk.StringVar()
-        self.velocidad_var = tk.StringVar()
-        self.caballaje_var = tk.StringVar()
-        self.plazas_var = tk.StringVar()
-        
-        self.traccion_var = tk.StringVar()
-        self.cerrada_var = tk.StringVar()
-        self.eje_var = tk.StringVar()
-        self.capacidad_carga_var = tk.StringVar()
-        
-        self.notebook = None
-        self.tabla_activa = None
-        
-        self.crear_notebook()
-        self.inicializar_tablas()
-
-    def crear_notebook(self):
-        self.notebook = ttk.Notebook(self.contenedor_principal)
-        self.notebook.pack(pady=10, padx=10, expand=True, fill="both")
-        
-        self.frame_autos = ttk.Frame(self.notebook, padding="10")
-        self.frame_camionetas = ttk.Frame(self.notebook, padding="10")
-        self.frame_camiones = ttk.Frame(self.notebook, padding="10")
-        
-        self.frame_autos.pack(fill='both', expand=True)
-        self.frame_camionetas.pack(fill='both', expand=True)
-        self.frame_camiones.pack(fill='both', expand=True)
-        
-        self.notebook.add(self.frame_autos, text='  Autos  ')
-        self.notebook.add(self.frame_camionetas, text='  Camionetas  ')
-        self.notebook.add(self.frame_camiones, text='  Camiones  ')
-        
-        self.crear_widgets_autos(self.frame_autos)
-        self.crear_widgets_camionetas(self.frame_camionetas)
-        self.crear_widgets_camiones(self.frame_camiones)
-        
-    def inicializar_tablas(self):
-        self.notebook.bind("<<NotebookTabChanged>>", self.cargar_datos_pestaña_activa)
-        self.consultar_autos()
-        self.tabla_activa = self.tabla_autos
-        
-    def cargar_datos_pestaña_activa(self, event):
-        pestaña_actual = self.notebook.tab(self.notebook.select(), "text").strip()
-        self.limpiar_campos()
-        
-        if "Autos" in pestaña_actual:
-            self.consultar_autos()
-            self.tabla_activa = self.tabla_autos
-        elif "Camionetas" in pestaña_actual:
-            self.consultar_camionetas()
-            self.tabla_activa = self.tabla_camionetas
-        elif "Camiones" in pestaña_actual:
-            self.consultar_camiones()
-            self.tabla_activa = self.tabla_camiones
-
-    def limpiar_campos(self):
-        self.id_var.set("")
-        self.marca_var.set("")
-        self.color_var.set("")
-        self.modelo_var.set("")
-        self.velocidad_var.set("")
-        self.caballaje_var.set("")
-        self.plazas_var.set("")
-        self.traccion_var.set("")
-        self.cerrada_var.set("")
-        self.eje_var.set("")
-        self.capacidad_carga_var.set("")
-
-    def crear_label_entry(self, contenedor, texto, variable, fila, columna):
-        ttk.Label(contenedor, text=texto).grid(row=fila, column=columna, padx=5, pady=5, sticky="w")
-        ttk.Entry(contenedor, textvariable=variable, width=15 if 'ID' in texto or 'Año' in texto else 20).grid(row=fila, column=columna + 1, padx=5, pady=5)
-
-    def crear_tabla(self, contenedor, columnas):
-        tabla = ttk.Treeview(contenedor, columns=columnas, show="headings")
-        
-        for col in columnas:
-            tabla.heading(col, text=col)
-            if col == "id": tabla.column(col, width=40, anchor=tk.CENTER)
-            elif col == "marca" or col == "modelo" or col == "color" or col == "traccion": tabla.column(col, width=100, anchor=tk.W)
-            else: tabla.column(col, width=80, anchor=tk.CENTER)
-
-        barra_desplazamiento = ttk.Scrollbar(contenedor, orient="vertical", command=tabla.yview)
-        tabla.configure(yscrollcommand=barra_desplazamiento.set)
-        
-        barra_desplazamiento.pack(side=tk.RIGHT, fill=tk.Y)
-        tabla.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
-        return tabla
-
-    # INTERFAZ AUTOS
-    def crear_widgets_autos(self, contenedor):
-        marco_entrada = ttk.Frame(contenedor, padding="10")
-        marco_entrada.pack(side=tk.TOP, fill=tk.X)
-        
-        self.crear_label_entry(marco_entrada, "ID Auto:", self.id_var, 0, 0)
-        self.crear_label_entry(marco_entrada, "Marca:", self.marca_var, 1, 0)
-        self.crear_label_entry(marco_entrada, "Color:", self.color_var, 1, 2)
-        self.crear_label_entry(marco_entrada, "Modelo (Año):", self.modelo_var, 2, 0)
-        self.crear_label_entry(marco_entrada, "Velocidad:", self.velocidad_var, 2, 2)
-        self.crear_label_entry(marco_entrada, "Caballaje:", self.caballaje_var, 3, 0)
-        self.crear_label_entry(marco_entrada, "Plazas:", self.plazas_var, 3, 2)
-        
-        marco_botones = ttk.Frame(contenedor, padding="10")
-        marco_botones.pack(side=tk.TOP, fill=tk.X)
-        ttk.Button(marco_botones, text="Insertar Auto", command=self.insertar_auto).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Consultar Autos", command=self.consultar_autos).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Actualizar Auto", command=self.cambiar_auto).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Borrar Auto", command=self.borrar_auto).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Limpiar Campos", command=self.limpiar_campos).pack(side=tk.LEFT, padx=5, pady=5)
-
-        columnas_autos = ("id", "marca", "color", "modelo", "velocidad", "caballaje", "plazas")
-        self.tabla_autos = self.crear_tabla(contenedor, columnas_autos)
-        self.tabla_autos.bind('<<TreeviewSelect>>', self.seleccionar_registro_auto)
-
-    # INTERFAZ CAMIONETAS
-    def crear_widgets_camionetas(self, contenedor):
-        marco_entrada = ttk.Frame(contenedor, padding="10")
-        marco_entrada.pack(side=tk.TOP, fill=tk.X)
-        
-        self.crear_label_entry(marco_entrada, "ID Camioneta:", self.id_var, 0, 0)
-        self.crear_label_entry(marco_entrada, "Marca:", self.marca_var, 1, 0)
-        self.crear_label_entry(marco_entrada, "Color:", self.color_var, 1, 2)
-        self.crear_label_entry(marco_entrada, "Modelo (Año):", self.modelo_var, 2, 0)
-        self.crear_label_entry(marco_entrada, "Velocidad:", self.velocidad_var, 2, 2)
-        self.crear_label_entry(marco_entrada, "Caballaje:", self.caballaje_var, 3, 0)
-        self.crear_label_entry(marco_entrada, "Plazas:", self.plazas_var, 3, 2)
-        
-        self.crear_label_entry(marco_entrada, "Tracción:", self.traccion_var, 4, 0)
-        self.crear_label_entry(marco_entrada, "Cerrada (0/1):", self.cerrada_var, 4, 2)
-        
-        marco_botones = ttk.Frame(contenedor, padding="10")
-        marco_botones.pack(side=tk.TOP, fill=tk.X)
-        ttk.Button(marco_botones, text="Insertar Camioneta", command=self.insertar_camioneta).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Consultar Camionetas", command=self.consultar_camionetas).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Actualizar Camioneta", command=self.cambiar_camioneta).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Borrar Camioneta", command=self.borrar_camioneta).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Limpiar Campos", command=self.limpiar_campos).pack(side=tk.LEFT, padx=5, pady=5)
-
-        columnas_camionetas = ("id", "marca", "color", "modelo", "velocidad", "caballaje", "plazas", "traccion", "cerrada")
-        self.tabla_camionetas = self.crear_tabla(contenedor, columnas_camionetas)
-        self.tabla_camionetas.bind('<<TreeviewSelect>>', self.seleccionar_registro_camioneta)
-
-    # INTERFAZ CAMIONES
-    def crear_widgets_camiones(self, contenedor):
-        marco_entrada = ttk.Frame(contenedor, padding="10")
-        marco_entrada.pack(side=tk.TOP, fill=tk.X)
-        
-        self.crear_label_entry(marco_entrada, "ID Camión:", self.id_var, 0, 0)
-        self.crear_label_entry(marco_entrada, "Marca:", self.marca_var, 1, 0)
-        self.crear_label_entry(marco_entrada, "Color:", self.color_var, 1, 2)
-        self.crear_label_entry(marco_entrada, "Modelo (Año):", self.modelo_var, 2, 0)
-        self.crear_label_entry(marco_entrada, "Velocidad:", self.velocidad_var, 2, 2)
-        self.crear_label_entry(marco_entrada, "Caballaje:", self.caballaje_var, 3, 0)
-        self.crear_label_entry(marco_entrada, "Plazas:", self.plazas_var, 3, 2)
-        
-        self.crear_label_entry(marco_entrada, "Eje:", self.eje_var, 4, 0)
-        self.crear_label_entry(marco_entrada, "Capacidad Carga:", self.capacidad_carga_var, 4, 2)
-        
-        marco_botones = ttk.Frame(contenedor, padding="10")
-        marco_botones.pack(side=tk.TOP, fill=tk.X)
-        ttk.Button(marco_botones, text="Insertar Camión", command=self.insertar_camion).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Consultar Camiones", command=self.consultar_camiones).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Actualizar Camión", command=self.cambiar_camion).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Borrar Camión", command=self.borrar_camion).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(marco_botones, text="Limpiar Campos", command=self.limpiar_campos).pack(side=tk.LEFT, padx=5, pady=5)
-
-        columnas_camiones = ("id", "marca", "color", "modelo", "velocidad", "caballaje", "plazas", "eje", "capacidadcarga")
-        self.tabla_camiones = self.crear_tabla(contenedor, columnas_camiones)
-        self.tabla_camiones.bind('<<TreeviewSelect>>', self.seleccionar_registro_camion)
-
-
-    def insertar_auto(self):
-        resultado = self.controlador.insertar_auto(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get())
-        messagebox.showinfo("Insertar", resultado)
-        self.limpiar_campos()
-        self.consultar_autos()
-
-    def consultar_autos(self):
-        self.tabla_activa = self.tabla_autos
-        for item in self.tabla_activa.get_children(): self.tabla_activa.delete(item)
-        registros = self.controlador.consultar_autos()
-        for registro in registros: self.tabla_activa.insert('', tk.END, values=registro)
+    @staticmethod
+    def borrarPantalla(ventana):
+        for widget in ventana.winfo_children():
+            widget.destroy()
             
-    def cambiar_auto(self):
-        resultado = self.controlador.cambiar_auto(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get())
-        messagebox.showinfo("Actualizar", resultado)
-        self.limpiar_campos()
-        self.consultar_autos()
-
-    def borrar_auto(self):
-        id_a_borrar = self.id_var.get()
-        if not id_a_borrar: messagebox.showerror("Error", "Debe seleccionar o ingresar un ID para borrar."); return
-        confirmar = messagebox.askyesno("Confirmar Borrado", f"¿Está seguro de borrar el Auto con ID {id_a_borrar}?")
-        if confirmar:
-            resultado = self.controlador.borrar_auto(id_a_borrar)
-            messagebox.showinfo("Borrar", resultado)
-            self.limpiar_campos()
-            self.consultar_autos()
-
-    def seleccionar_registro_auto(self, event):
-        item_seleccionado = self.tabla_autos.focus()
-        if item_seleccionado:
-            valores = self.tabla_autos.item(item_seleccionado, 'values')
-            self.id_var.set(valores[0])
-            self.marca_var.set(valores[1])
-            self.color_var.set(valores[2])
-            self.modelo_var.set(valores[3])
-            self.velocidad_var.set(valores[4])
-            self.caballaje_var.set(valores[5])
-            self.plazas_var.set(valores[6])
-            self.traccion_var.set(""); self.cerrada_var.set(""); self.eje_var.set(""); self.capacidad_carga_var.set("") 
-
-
-    def insertar_camioneta(self):
-        resultado = self.controlador.insertar_camioneta(self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.traccion_var.get(), self.cerrada_var.get())
-        messagebox.showinfo("Insertar Camioneta", resultado)
-        self.limpiar_campos()
-        self.consultar_camionetas()
-
-    def consultar_camionetas(self):
-        self.tabla_activa = self.tabla_camionetas
-        for item in self.tabla_activa.get_children(): self.tabla_activa.delete(item)
-        registros = self.controlador.consultar_camionetas()
-        for registro in registros: self.tabla_activa.insert('', tk.END, values=registro)
-            
-    def cambiar_camioneta(self):
-        resultado = self.controlador.cambiar_camioneta(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.traccion_var.get(), self.cerrada_var.get())
-        messagebox.showinfo("Actualizar Camioneta", resultado)
-        self.limpiar_campos()
-        self.consultar_camionetas()
-
-    def borrar_camioneta(self):
-        id_a_borrar = self.id_var.get()
-        if not id_a_borrar: messagebox.showerror("Error", "Debe seleccionar o ingresar un ID para borrar."); return
-        confirmar = messagebox.askyesno("Confirmar Borrado", f"¿Está seguro de borrar la Camioneta con ID {id_a_borrar}?")
-        if confirmar:
-            resultado = self.controlador.borrar_camioneta(id_a_borrar)
-            messagebox.showinfo("Borrar Camioneta", resultado)
-            self.limpiar_campos()
-            self.consultar_camionetas()
-
-    def seleccionar_registro_camioneta(self, event):
-        item_seleccionado = self.tabla_camionetas.focus()
-        if item_seleccionado:
-            valores = self.tabla_camionetas.item(item_seleccionado, 'values')
-            self.id_var.set(valores[0])
-            self.marca_var.set(valores[1])
-            self.color_var.set(valores[2])
-            self.modelo_var.set(valores[3])
-            self.velocidad_var.set(valores[4])
-            self.caballaje_var.set(valores[5])
-            self.plazas_var.set(valores[6])
-            self.traccion_var.set(valores[7])
-            self.cerrada_var.set(valores[8])
-            self.eje_var.set(""); self.capacidad_carga_var.set("") 
-
+    @staticmethod
+    def menu_principal(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text="Menu principal")
+        lblTitulo.pack(pady=5)
+        btnCoches=Button(ventana,text="1.-Coches",command=lambda : InterfacesMenu.menu_acciones(ventana,"coches"))
+        btnCoches.pack(pady=5)
+        btnCamiones=Button(ventana,text="2.-Camiones",command=lambda: InterfacesMenu.menu_acciones(ventana,"camiones"))
+        btnCamiones.pack(pady=5)
+        btnCamionetas=Button(ventana,text="3.-Camionetas",command=lambda: InterfacesMenu.menu_acciones(ventana,"camionetas"))
+        btnCamionetas.pack(pady=5)
+        btnSalir=Button(ventana,text="4.-Salir",command=ventana.quit)
+        btnSalir.pack(pady=5)
     
-    # MÉTODOS CRUD CAMIONES
-    def insertar_camion(self):
-        resultado = self.controlador.insertar_camion(self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.eje_var.get(), self.capacidad_carga_var.get())
-        messagebox.showinfo("Insertar Camión", resultado)
-        self.limpiar_campos()
-        self.consultar_camiones()
+    @staticmethod
+    def menu_acciones(ventana,vehiculo):
+        global tipo
+        tipo=vehiculo
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Menu de {tipo}")
+        lblTitulo.pack(pady=5)
+        
+        # Asignación correcta de botones según el tipo
+        if tipo=="coches":
+            btnAgregar=Button(ventana,text="1.-Agregar",command=lambda: InterfacesMenu.coches_agregar(ventana))
+            btnMostrar=Button(ventana,text="2.-Mostrar",command=lambda: InterfacesMenu.coches_mostrar(ventana))
+        elif tipo=="camionetas":
+            btnAgregar=Button(ventana,text="1.-Agregar",command=lambda: InterfacesMenu.camionetas_agregar(ventana)) 
+            btnMostrar=Button(ventana,text="2.-Mostrar",command=lambda: InterfacesMenu.camionetas_mostrar(ventana))
+        elif tipo=="camiones":
+            btnAgregar=Button(ventana,text="1.-Agregar",command=lambda: InterfacesMenu.camiones_agregar(ventana))
+            btnMostrar=Button(ventana,text="2.-Mostrar",command=lambda: InterfacesMenu.camiones_mostrar(ventana))
+        
+        btnAgregar.pack(pady=5)
+        btnMostrar.pack(pady=5)
 
-    def consultar_camiones(self):
-        self.tabla_activa = self.tabla_camiones
-        for item in self.tabla_activa.get_children(): self.tabla_activa.delete(item)
-        registros = self.controlador.consultar_camiones()
-        for registro in registros: self.tabla_activa.insert('', tk.END, values=registro)
-            
-    def cambiar_camion(self):
-        resultado = self.controlador.cambiar_camion(self.id_var.get(), self.marca_var.get(), self.color_var.get(), self.modelo_var.get(), self.velocidad_var.get(), self.caballaje_var.get(), self.plazas_var.get(), self.eje_var.get(), self.capacidad_carga_var.get())
-        messagebox.showinfo("Actualizar Camión", resultado)
-        self.limpiar_campos()
-        self.consultar_camiones()
+        btnCambiar=Button(ventana,text="3.-Cambiar",command=lambda: InterfacesMenu.intrfaz_buscar_cambiar(ventana))
+        btnCambiar.pack(pady=5)
+        btnEliminar=Button(ventana,text="4.-Eliminar",command=lambda: InterfacesMenu.intrfaz_buscar_eliminar(ventana))
+        btnEliminar.pack(pady=5)
+        btnSalir=Button(ventana,text="5.-Volver",command=lambda: InterfacesMenu.menu_principal(ventana))
+        btnSalir.pack(pady=5)
 
-    def borrar_camion(self):
-        id_a_borrar = self.id_var.get()
-        if not id_a_borrar: messagebox.showerror("Error", "Debe seleccionar o ingresar un ID para borrar."); return
-        confirmar = messagebox.askyesno("Confirmar Borrado", f"¿Está seguro de borrar el Camión con ID {id_a_borrar}?")
-        if confirmar:
-            resultado = self.controlador.borrar_camion(id_a_borrar)
-            messagebox.showinfo("Borrar Camión", resultado)
-            self.limpiar_campos()
-            self.consultar_camiones()
 
-    def seleccionar_registro_camion(self, event):
-        item_seleccionado = self.tabla_camiones.focus()
-        if item_seleccionado:
-            valores = self.tabla_camiones.item(item_seleccionado, 'values')
-            self.id_var.set(valores[0])
-            self.marca_var.set(valores[1])
-            self.color_var.set(valores[2])
-            self.modelo_var.set(valores[3])
-            self.velocidad_var.set(valores[4])
-            self.caballaje_var.set(valores[5])
-            self.plazas_var.set(valores[6])
-            self.eje_var.set(valores[7])
-            self.capacidad_carga_var.set(valores[8])
-            self.traccion_var.set(""); self.cerrada_var.set("")
+# --- COCHES ---
+
+    @staticmethod
+    def coches_agregar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text="Agregar coches")
+        lblTitulo.pack(pady=5)
+        lblMarca=Label(ventana,text="Inserte la marca")
+        lblMarca.pack()
+        txtMarca=Entry(ventana)
+        txtMarca.pack(pady=5)
+
+        lblColor=Label(ventana,text="Inserte el color")
+        lblColor.pack()
+        txtColor=Entry(ventana)
+        txtColor.pack(pady=5)
+
+        lblModelo=Label(ventana,text="Inserte el modelo")
+        lblModelo.pack()
+        txtModelo=Entry(ventana)
+        txtModelo.pack(pady=5)
+
+        lblVelocidad=Label(ventana,text="Inserte la velocidad")
+        lblVelocidad.pack()
+        txtVelocidad=Entry(ventana)
+        txtVelocidad.pack(pady=5)
+
+        lblPotencia=Label(ventana,text="Inserte la potencia")
+        lblPotencia.pack()
+        txtPotencia=Entry(ventana)
+        txtPotencia.pack(pady=5)
+
+        lblPlazas=Label(ventana,text="Inserte las plazas")
+        lblPlazas.pack()
+        txtPlazas=Entry(ventana)
+        txtPlazas.pack(pady=5)
+
+        btnAgregar=Button(ventana,text="Agregar",command= lambda: AutosControlador.insertar_coche(txtMarca.get(),txtColor.get(),txtModelo.get(),txtVelocidad.get(),txtPotencia.get(),txtPlazas.get()))
+        btnAgregar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def coches_mostrar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text="Coches agregados")
+        lblTitulo.pack(pady=5)
+        filas=""
+        registros=AutosControlador.mostrar_coche() 
+        num_autos=1
+        if registros:
+            for fila in registros:
+                filas=filas+f"\nAuto #{num_autos} con ID: {fila[0]} \nMarca: {fila[1]} Color: {fila[2]} Modelo: {fila[3]} Velocidad: {fila[4]} Potencia: {fila[5]} Plazas: {fila[6]}"
+                num_autos+=1
+        lblNote=Label(ventana,text=filas)
+        lblNote.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command=lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def coches_cambiar(ventana,opid):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text="Cambiar coche")
+        lblTitulo.pack(pady=5)
+
+        lblId=Label(ventana,text="ID a Modificar:")
+        lblId.pack(pady=5)
+        
+        # CORRECCIÓN: Usar StringVar y borrar contenido previo
+        id_modificar=StringVar() 
+        txtId=Entry(ventana,textvariable=id_modificar)
+        txtId.delete(0,END)
+        txtId.insert(0,opid) # Insertar el ID limpio
+        txtId.config(state="readonly")
+        txtId.pack()
+
+        lblMarca=Label(ventana,text="Inserte la marca")
+        lblMarca.pack()
+        txtMarca=Entry(ventana)
+        txtMarca.pack(pady=5)
+
+        lblColor=Label(ventana,text="Inserte el color")
+        lblColor.pack()
+        txtColor=Entry(ventana)
+        txtColor.pack(pady=5)
+
+        lblModelo=Label(ventana,text="Inserte el modelo")
+        lblModelo.pack()
+        txtModelo=Entry(ventana)
+        txtModelo.pack(pady=5)
+
+        lblVelocidad=Label(ventana,text="Inserte la velocidad")
+        lblVelocidad.pack()
+        txtVelocidad=Entry(ventana)
+        txtVelocidad.pack(pady=5)
+
+        lblPotencia=Label(ventana,text="Inserte la potencia")
+        lblPotencia.pack()
+        txtPotencia=Entry(ventana)
+        txtPotencia.pack(pady=5)
+
+        lblPlazas=Label(ventana,text="Inserte las plazas")
+        lblPlazas.pack()
+        txtPlazas=Entry(ventana)
+        txtPlazas.pack(pady=5)
+
+        btnGuardar=Button(ventana,text="Guardar",command= lambda: AutosControlador.actualizar_coche(txtMarca.get(),txtColor.get(),txtModelo.get(),txtVelocidad.get(),txtPotencia.get(),txtPlazas.get(),id_modificar.get()))
+        btnGuardar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def coches_eliminar(ventana,opid):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text="Eliminar un coche")
+        lblTitulo.pack(pady=5)
+        lblId=Label(ventana,text="ID a Eliminar:")
+        lblId.pack(pady=5)
+        
+        # CORRECCIÓN: Usar StringVar
+        id_eliminar=StringVar() 
+        txtId=Entry(ventana,textvariable=id_eliminar)
+        txtId.delete(0,END)
+        txtId.insert(0,opid) 
+        txtId.config(state="readonly")
+        txtId.pack()
+        
+        btnEliminar=Button(ventana,text="Eliminar",command= lambda:AutosControlador.eliminar_coche(id_eliminar.get()))
+        btnEliminar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+
+# --- CAMIONES ---
+
+    @staticmethod
+    def camiones_agregar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Agregar {tipo}")
+        lblTitulo.pack(pady=5)
+        lblMarca=Label(ventana,text="Inserte la marca")
+        lblMarca.pack()
+        txtMarca=Entry(ventana)
+        txtMarca.pack(pady=5)
+
+        lblColor=Label(ventana,text="Inserte el color")
+        lblColor.pack()
+        txtColor=Entry(ventana)
+        txtColor.pack(pady=5)
+
+        lblModelo=Label(ventana,text="Inserte el modelo")
+        lblModelo.pack()
+        txtModelo=Entry(ventana)
+        txtModelo.pack(pady=5)
+
+        lblVelocidad=Label(ventana,text="Inserte la velocidad")
+        lblVelocidad.pack()
+        txtVelocidad=Entry(ventana)
+        txtVelocidad.pack(pady=5)
+
+        lblPotencia=Label(ventana,text="Inserte la potencia")
+        lblPotencia.pack()
+        txtPotencia=Entry(ventana)
+        txtPotencia.pack(pady=5)
+
+        lblPlazas=Label(ventana,text="Inserte las plazas")
+        lblPlazas.pack()
+        txtPlazas=Entry(ventana)
+        txtPlazas.pack(pady=5)
+
+        lblEje=Label(ventana,text="Ingrese el eje")
+        lblEje.pack(pady=5)
+        txtEje=Entry(ventana)
+        txtEje.pack()
+
+        lblCapacidad=Label(ventana,text="Ingrese la capacidad")
+        lblCapacidad.pack(pady=5)
+        txtCapacidad=Entry(ventana)
+        txtCapacidad.pack()
+
+        btnAgregar=Button(ventana,text="Agregar",command= lambda: CamionesControlador.insertar_camion(txtMarca.get(),txtColor.get(),txtModelo.get(),txtVelocidad.get(),txtPotencia.get(),txtPlazas.get(),txtEje.get(),txtCapacidad.get()))
+        btnAgregar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def camiones_mostrar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Mostrar {tipo}")
+        lblTitulo.pack(pady=5)
+        filas=""
+        registros=CamionesControlador.mostrar_camion()
+        
+        if registros:
+            num_camion=1
+            for fila in registros:
+                filas=filas+f"\nCamion #{num_camion} con ID: {fila[0]} \nMarca: {fila[1]} Color: {fila[2]} Modelo: {fila[3]} Velocidad: {fila[4]} Potencia: {fila[5]} Plazas: {fila[6]} Eje: {fila[7]} Capacidad: {fila[8]}"
+                num_camion+=1
+        
+        lblNote=Label(ventana,text=filas)
+        lblNote.pack(pady=5)
+
+        btnVolver=Button(ventana,text="Volver",command=lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def camiones_eliminar(ventana, opid=None):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Eliminar un {tipo}")
+        lblTitulo.pack(pady=5)
+        lblId=Label(ventana,text="ID a eliminar:")
+        lblId.pack(pady=5)
+        
+        # CORRECCIÓN: Usar StringVar
+        id_eliminar=StringVar()
+        txtId=Entry(ventana,textvariable=id_eliminar)
+        if opid is not None:
+            txtId.delete(0,END)
+            txtId.insert(0,opid)
+            txtId.config(state="readonly")
+        txtId.pack()
+        
+        btnEliminar=Button(ventana,text="Eliminar",command= lambda: CamionesControlador.eliminar_camion(id_eliminar.get()))
+        btnEliminar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def camiones_cambiar(ventana, opid=None):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Modificar {tipo}")
+        lblTitulo.pack(pady=5)
+        
+        lblId=Label(ventana,text="ID a modificar:")
+        lblId.pack(pady=5)
+        # CORRECCIÓN: Usar StringVar
+        id_modificar=StringVar()
+        txtId=Entry(ventana,textvariable=id_modificar)
+        if opid is not None:
+            txtId.delete(0,END)
+            txtId.insert(0,opid)
+            txtId.config(state="readonly")
+        txtId.pack()
+        
+        lblMarca=Label(ventana,text="Inserte la marca")
+        lblMarca.pack()
+        txtMarca=Entry(ventana)
+        txtMarca.pack(pady=5)
+
+        lblColor=Label(ventana,text="Inserte el color")
+        lblColor.pack()
+        txtColor=Entry(ventana)
+        txtColor.pack(pady=5)
+
+        lblModelo=Label(ventana,text="Inserte el modelo")
+        lblModelo.pack()
+        txtModelo=Entry(ventana)
+        txtModelo.pack(pady=5)
+
+        lblVelocidad=Label(ventana,text="Inserte la velocidad")
+        lblVelocidad.pack()
+        txtVelocidad=Entry(ventana)
+        txtVelocidad.pack(pady=5)
+
+        lblPotencia=Label(ventana,text="Inserte la potencia")
+        lblPotencia.pack()
+        txtPotencia=Entry(ventana)
+        txtPotencia.pack(pady=5)
+
+        lblPlazas=Label(ventana,text="Inserte las plazas")
+        lblPlazas.pack()
+        txtPlazas=Entry(ventana)
+        txtPlazas.pack(pady=5)
+
+        lblEje=Label(ventana,text="Ingrese el eje")
+        lblEje.pack(pady=5)
+        txtEje=Entry(ventana)
+        txtEje.pack()
+
+        lblCapacidad=Label(ventana,text="Ingrese la capacidad")
+        lblCapacidad.pack(pady=5)
+        txtCapacidad=Entry(ventana)
+        txtCapacidad.pack()
+
+        btnGuardar=Button(ventana,text="Guardar",command= lambda: CamionesControlador.actualizar_camion(txtMarca.get(),txtColor.get(),txtModelo.get(),txtVelocidad.get(),txtPotencia.get(),txtPlazas.get(),txtEje.get(),txtCapacidad.get(), id_modificar.get()))
+        btnGuardar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+
+# --- CAMIONETAS ---
+
+    # Función auxiliar para Listbox
+    @staticmethod
+    def obtener_seleccion_lbx(listbox):
+        try:
+            indice = listbox.curselection()[0]
+            return listbox.get(indice)
+        except IndexError:
+            messagebox.showinfo(message="Debe seleccionar una opción en Tracción y Cerrada.", title="Error de Selección", icon="warning")
+            return None
+
+    @staticmethod
+    def camionetas_agregar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Agregar {tipo}")
+        lblTitulo.pack(pady=5)
+        lblMarca=Label(ventana,text="Inserte la marca")
+        lblMarca.pack()
+        txtMarca=Entry(ventana)
+        txtMarca.pack(pady=5)
+
+        lblColor=Label(ventana,text="Inserte el color")
+        lblColor.pack()
+        txtColor=Entry(ventana)
+        txtColor.pack(pady=5)
+
+        lblModelo=Label(ventana,text="Inserte el modelo")
+        lblModelo.pack()
+        txtModelo=Entry(ventana)
+        txtModelo.pack(pady=5)
+
+        lblVelocidad=Label(ventana,text="Inserte la velocidad")
+        lblVelocidad.pack()
+        txtVelocidad=Entry(ventana)
+        txtVelocidad.pack(pady=5)
+
+        lblPotencia=Label(ventana,text="Inserte la potencia")
+        lblPotencia.pack()
+        txtPotencia=Entry(ventana)
+        txtPotencia.pack(pady=5)
+
+        lblPlazas=Label(ventana,text="Inserte las plazas")
+        lblPlazas.pack()
+        txtPlazas=Entry(ventana)
+        txtPlazas.pack(pady=5)
+
+        lblTraccion=Label(ventana,text="Ingrese la traccion")
+        lblTraccion.pack(pady=5)
+        lbxTraccion=Listbox(ventana,width=10,height=3,selectmode="single",exportselection=False)
+        traccion=["Trasera","Delantera","Total"]
+        for i in traccion:
+            lbxTraccion.insert(END,i)
+        lbxTraccion.pack()
+
+        lblCerrada=Label(ventana,text="Es cerrada?")
+        lblCerrada.pack(pady=5)
+        lbxCerrada=Listbox(ventana,width=10,height=2,selectmode="single",exportselection=False)
+        eleccion=["Si","No"]
+        for i in eleccion:
+            lbxCerrada.insert(END,i)
+        lbxCerrada.pack()
+
+        btnAgregar=Button(ventana,text="Agregar",command= lambda: CamionetasControlador.insertar_camioneta(txtMarca.get(),txtColor.get(),txtModelo.get(),txtVelocidad.get(),txtPotencia.get(),txtPlazas.get(),InterfacesMenu.obtener_seleccion_lbx(lbxTraccion),InterfacesMenu.obtener_seleccion_lbx(lbxCerrada)))
+        btnAgregar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def camionetas_mostrar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Mostrar {tipo}")
+        lblTitulo.pack(pady=5)
+        filas=""
+        registros=CamionetasControlador.mostrar_camioneta()
+        
+        if registros:
+            num_camion=1
+            for fila in registros:
+                cerrada_txt = "Sí" if fila[8] == 1 else "No"
+                filas=filas+f"\nAuto #{num_camion} con ID: {fila[0]} \nMarca: {fila[1]} Color: {fila[2]} Modelo: {fila[3]} Velocidad: {fila[4]} Potencia: {fila[5]} Plazas: {fila[6]} Tracción: {fila[7]} Cerrada: {cerrada_txt}"
+                num_camion+=1
+        
+        lblNote=Label(ventana,text=filas)
+        lblNote.pack(pady=5)
+
+        btnVolver=Button(ventana,text="Volver",command=lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def camionetas_eliminar(ventana, opid=None):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Eliminar una {tipo}")
+        lblTitulo.pack(pady=5)
+        lblId=Label(ventana,text="ID a eliminar:")
+        lblId.pack(pady=5)
+        
+        # CORRECCIÓN: Usar StringVar
+        id_eliminar=StringVar()
+        txtId=Entry(ventana,textvariable=id_eliminar)
+        if opid is not None:
+            txtId.delete(0,END)
+            txtId.insert(0,opid)
+            txtId.config(state="readonly")
+        txtId.pack()
+        
+        btnEliminar=Button(ventana,text="Eliminar",command= lambda: CamionetasControlador.eliminar_camioneta(id_eliminar.get()))
+        btnEliminar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+
+    @staticmethod
+    def camionetas_cambiar(ventana, opid=None):
+        InterfacesMenu.borrarPantalla(ventana)
+        lblTitulo=Label(ventana,text=f"Modificar {tipo}")
+        lblTitulo.pack(pady=5)
+        
+        lblId=Label(ventana,text="ID a modificar:")
+        lblId.pack(pady=5)
+        # CORRECCIÓN: Usar StringVar
+        id_modificar=StringVar()
+        txtId=Entry(ventana,textvariable=id_modificar)
+        if opid is not None:
+            txtId.delete(0,END)
+            txtId.insert(0,opid)
+            txtId.config(state="readonly")
+        txtId.pack()
+        
+        lblMarca=Label(ventana,text="Inserte la marca")
+        lblMarca.pack()
+        txtMarca=Entry(ventana)
+        txtMarca.pack(pady=5)
+
+        lblColor=Label(ventana,text="Inserte el color")
+        lblColor.pack()
+        txtColor=Entry(ventana)
+        txtColor.pack(pady=5)
+
+        lblModelo=Label(ventana,text="Inserte el modelo")
+        lblModelo.pack()
+        txtModelo=Entry(ventana)
+        txtModelo.pack(pady=5)
+
+        lblVelocidad=Label(ventana,text="Inserte la velocidad")
+        lblVelocidad.pack()
+        txtVelocidad=Entry(ventana)
+        txtVelocidad.pack(pady=5)
+
+        lblPotencia=Label(ventana,text="Inserte la potencia")
+        lblPotencia.pack()
+        txtPotencia=Entry(ventana)
+        txtPotencia.pack(pady=5)
+
+        lblPlazas=Label(ventana,text="Inserte las plazas")
+        lblPlazas.pack()
+        txtPlazas=Entry(ventana)
+        txtPlazas.pack(pady=5)
+        
+        lblTraccion=Label(ventana,text="Ingrese la traccion")
+        lblTraccion.pack(pady=5)
+        lbxTraccion=Listbox(ventana,width=10,height=3,selectmode="single",exportselection=False)
+        traccion=["Trasera","Delantera","Total"]
+        for i in traccion:
+            lbxTraccion.insert(END,i)
+        lbxTraccion.pack()
+
+        lblCerrada=Label(ventana,text="Es cerrada?")
+        lblCerrada.pack(pady=5)
+        lbxCerrada=Listbox(ventana,width=10,height=2,selectmode="single",exportselection=False)
+        eleccion=["Si","No"]
+        for i in eleccion:
+            lbxCerrada.insert(END,i)
+        lbxCerrada.pack()
+        
+        btnGuardar=Button(ventana,text="Guardar",command= lambda: CamionetasControlador.actualizar_camioneta(txtMarca.get(),txtColor.get(),txtModelo.get(),txtVelocidad.get(),txtPotencia.get(),txtPlazas.get(),InterfacesMenu.obtener_seleccion_lbx(lbxTraccion),InterfacesMenu.obtener_seleccion_lbx(lbxCerrada), id_modificar.get()))
+        btnGuardar.pack(pady=5)
+        btnVolver=Button(ventana,text="Volver",command= lambda: InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=5)
+        
+    # --- BÚSQUEDA GENERAL ---
+    @staticmethod
+    def intrfaz_buscar_cambiar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        
+        lblTitulo=Label(ventana,text=f".:Buscar un vehículo:.")
+        lblTitulo.pack(pady=10)
+
+        lblId=Label(ventana,text=f"ID del vehículo:")
+        lblId.pack(pady=10)
+
+        # CORRECCIÓN CRÍTICA: Usar StringVar evita el "0" inicial
+        id_val=StringVar()
+        txtId=Entry(ventana,textvariable=id_val)
+        txtId.pack(pady=10)
+        txtId.focus()
+        
+        # Seleccionar controlador
+        if tipo=="coches":
+            Controlador = AutosControlador
+        elif tipo=="camiones":
+            Controlador = CamionesControlador
+        elif tipo=="camionetas":
+            Controlador = CamionetasControlador
+        else:
+            return
+
+        # Convertimos a int() al enviar al controlador
+        btnCambiar=Button(ventana,text=f"Buscar",command=lambda:Controlador.buscarId_modificar(ventana,int(id_val.get()) if id_val.get().isdigit() else 0, tipo))
+        btnCambiar.pack(pady=10)
+        
+        btnVolver=Button(ventana,text=f"Volver",command=lambda:InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=10)
+
+    @staticmethod
+    def intrfaz_buscar_eliminar(ventana):
+        InterfacesMenu.borrarPantalla(ventana)
+        
+        lblTitulo=Label(ventana,text=f".:Buscar un vehículo:.")
+        lblTitulo.pack(pady=10)
+
+        lblId=Label(ventana,text=f"ID del vehículo:")
+        lblId.pack(pady=10)
+
+        # CORRECCIÓN CRÍTICA: Usar StringVar evita el "0" inicial
+        id_val=StringVar()
+        txtId=Entry(ventana,textvariable=id_val)
+        txtId.pack(pady=10)
+        txtId.focus()
+        
+        if tipo=="coches":
+            Controlador = AutosControlador
+        elif tipo=="camiones":
+            Controlador = CamionesControlador
+        elif tipo=="camionetas":
+            Controlador = CamionetasControlador
+        else:
+            return
+
+        # Convertimos a int() al enviar al controlador
+        btnEliminar=Button(ventana,text=f"Buscar",command=lambda: Controlador.buscarId_eliminar(ventana,int(id_val.get()) if id_val.get().isdigit() else 0, tipo))
+        btnEliminar.pack(pady=10)
+
+        btnVolver=Button(ventana,text=f"Volver",command=lambda:InterfacesMenu.menu_acciones(ventana,tipo))
+        btnVolver.pack(pady=10)
