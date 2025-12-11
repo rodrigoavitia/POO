@@ -28,7 +28,7 @@ class SplashView(ctk.CTkFrame):
         self.progress_bar = ctk.CTkProgressBar(self.center_frame, width=400, height=15, corner_radius=10)
         self.progress_bar.pack(pady=10)
         self.progress_bar.set(0) # Iniciar en 0
-        self.progress_bar.configure(progress_color="#0092B8") # Azul VERA
+        self.progress_bar.configure(progress_color="#0092B8") 
 
         # 4. TEXTO DE ESTADO
         self.lbl_status = ctk.CTkLabel(self.center_frame, text="Iniciando sistema...", font=("Arial", 12), text_color="gray")

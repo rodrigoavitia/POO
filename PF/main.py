@@ -1,6 +1,15 @@
 import customtkinter as ctk
 from tkinter import messagebox
 
+""""
+En lugar de utilizar el patrón estricto Modelo-Vista-Controlador (MVC), 
+donde cada vista tendría su propio archivo de controlador dedicado, se optó por el patrón
+Modelo-Vista (MV). Esto significa que las Vistas (view/*.py) contienen su propia lógica de eventos
+(por ejemplo, qué hace un botón), y main.py se encarga de la coordinación de alto nivel entre ellas,
+ reduciendo la complejidad de la herencia y el paso de parámetros entre múltiples archivos
+ de controlador pequeños.
+ 
+"""
 # IMPORTACIÓN DE TODAS LAS VISTAS
 from view.login_view import LoginView
 from view.sudote_view import SudoteView
@@ -135,3 +144,4 @@ class MainApp(ctk.CTk):
 if __name__ == "__main__":
     app = MainApp()
     app.mainloop()
+

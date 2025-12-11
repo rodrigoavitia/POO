@@ -117,7 +117,7 @@ class ReportesView(ctk.CTkFrame):
         ctk.CTkFrame(row, height=1, fg_color="#E5E7EB").pack(side="bottom", fill="x")
 
         for i, dato in enumerate(datos_visuales):
-            if i == 2: # Rol con color
+            if i == 2: # Rol con color para mas sabor
                 bg = "#E0E7FF" if "Estudiante" in str(dato) else "#DCFCE7" if "Docente" in str(dato) else "#F3F4F6"
                 fg = "#3730A3" if "Estudiante" in str(dato) else "#166534"
                 lbl = ctk.CTkLabel(row, text=str(dato), font=("Arial", 11, "bold"), text_color=fg, fg_color=bg, corner_radius=5, width=self.widths[i])

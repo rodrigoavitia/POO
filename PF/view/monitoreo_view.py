@@ -182,3 +182,8 @@ class MonitoreoView(ctk.CTkFrame):
     def volver(self):
         self.simulating = False
         self.controller.show_frame("SudoteView")
+
+""""
+Por el momento solo haremos la simulación debido a la falta de recolección 
+de datos y de inversión economica
+"""

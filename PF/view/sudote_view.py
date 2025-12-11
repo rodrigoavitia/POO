@@ -9,7 +9,7 @@ class SudoteView(ctk.CTkFrame):
         self.controller = controller
         self.configure(fg_color="#F3F4F6")
 
-        # SIDEBAR (Izquierda)
+        # SIDEBAR
         self.sidebar = ctk.CTkFrame(self, width=260, fg_color="white", corner_radius=0)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
@@ -22,7 +22,7 @@ class SudoteView(ctk.CTkFrame):
         # MENÚ DE NAVEGACIÓN
         self.crear_boton_menu("Panel de Control", "📊", activo=True)
         self.crear_boton_menu("Vehículos", "🚗", comando=lambda: self.controller.show_frame("GestionVehiculosView"))
-        # En SudoteView y SuditoView:
+        #SudoteView y SuditoView:
         self.crear_boton_menu("Usuarios", "👥", comando=lambda: self.controller.show_frame("GestionUsuariosView"))
         self.crear_boton_menu("Monitoreo en Vivo", "📹", comando=lambda: self.controller.show_frame("MonitoreoView"))
         self.crear_boton_menu("Reportes", "📄", comando=lambda: self.controller.show_frame("ReportesView"))
@@ -31,22 +31,22 @@ class SudoteView(ctk.CTkFrame):
         self.btn_logout = ctk.CTkButton(self.sidebar, text="Cerrar Sesión", fg_color="#FEF2F2", text_color="#DC2626", hover_color="#FEE2E2", command=self.logout)
         self.btn_logout.pack(side="bottom", fill="x", padx=20, pady=30)
 
-        # ÁREA PRINCIPAL (Derecha)
+        # ÁREA PRINCIPAL 
         self.main_area = ctk.CTkScrollableFrame(self, fg_color="transparent")
         self.main_area.pack(side="right", fill="both", expand=True, padx=20, pady=20)
         
         ctk.CTkLabel(self.main_area, text="Dashboard - Sistema V.E.R.A.", font=("Arial", 24, "bold"), text_color="#111827").pack(anchor="w")
         ctk.CTkLabel(self.main_area, text="Vista general del estacionamiento institucional", font=("Arial", 14), text_color="gray").pack(anchor="w", pady=(0, 20))
 
-        # 1. TARJETAS KPI (Fila Superior)
+        # 1. TARJETAS KPI
         self.kpi_frame = ctk.CTkFrame(self.main_area, fg_color="transparent")
         self.kpi_frame.pack(fill="x", pady=(0, 20))
         
-        # Vehículos Hoy (Azul)
+        # Vehículos Hoy 
         self.crear_kpi(self.kpi_frame, "Vehículos Hoy", "820", "+12% vs ayer", "#2B7FFF", "#EFF6FF")
-        # Usuarios Activos (Morado)
+        # Usuarios Activos)
         self.crear_kpi(self.kpi_frame, "Usuarios Activos", "1,200", "Total registrados", "#AD46FF", "#FAF5FF")
-        # Ocupación (Naranja)
+        # Ocupación
         self.crear_kpi(self.kpi_frame, "Ocupación", "78%", "Cerca del límite", "#F97316", "#FFF7ED")
 
         # 2. GRÁFICAS DE BARRAS (Fila Central)

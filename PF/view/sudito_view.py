@@ -9,7 +9,7 @@ class SuditoView(ctk.CTkFrame):
         self.controller = controller
         self.configure(fg_color="#F3F4F6")
 
-        # SIDEBAR (Izquierda)
+        # SIDEBAR
         self.sidebar = ctk.CTkFrame(self, width=260, fg_color="white", corner_radius=0)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
@@ -19,7 +19,7 @@ class SuditoView(ctk.CTkFrame):
         ctk.CTkLabel(self.sidebar, text="Panel Operativo", font=("Arial", 12), text_color="gray").pack(padx=20, anchor="w")
         ctk.CTkFrame(self.sidebar, height=2, fg_color="#E5E7EB").pack(fill="x", pady=20)
 
-        # MENÚ DE NAVEGACIÓN (Sin Cámaras)
+        # MENÚ DE NAVEGACIÓN (AQUI RECORDEMOS MUCHACHOS QUE SUDITO NO PUEDE VER CAMARAS)
         self.crear_boton_menu("Panel de Control", "📊", activo=True)
         # Apuntan a las listas de gestión
         self.crear_boton_menu("Vehículos", "🚗", comando=lambda: self.controller.show_frame("GestionVehiculosView"))
@@ -42,11 +42,11 @@ class SuditoView(ctk.CTkFrame):
         self.kpi_frame = ctk.CTkFrame(self.main_area, fg_color="transparent")
         self.kpi_frame.pack(fill="x", pady=(0, 20))
         
-        # Vehículos Hoy (Azul)
+        # Vehículos Hoy
         self.crear_kpi(self.kpi_frame, "Vehículos Hoy", "820", "+12% vs ayer", "#2B7FFF", "#EFF6FF")
-        # Usuarios Activos (Morado)
+        # Usuarios Activos
         self.crear_kpi(self.kpi_frame, "Usuarios Activos", "1,200", "Total registrados", "#AD46FF", "#FAF5FF")
-        # Ocupación (Naranja)
+        # Ocupación
         self.crear_kpi(self.kpi_frame, "Ocupación", "78%", "Cerca del límite", "#F97316", "#FFF7ED")
 
         # 2. GRÁFICAS DE BARRAS (Fila Central)
